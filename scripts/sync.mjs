@@ -94,6 +94,40 @@ async function fetchDraftTree(pageId, depth = 0, title = null) {
   return out;
 }
 
+// Renders the GDD page + its variant subpages into the ===SUBDOC:=== format
+// that the LLM produces and consumes.
+async function fetchGddCombined(pageId) {
+  let out = await pageToMd(pageId);
+  for (const block of await listAllChildren(pageId)) {
+    if (block.type === 'child_page') {
+      out += `\n\n===SUBDOC: ${block.child_page.title}===\n\n` + (await pageToMd(block.id));
+    }
+  }
+  return out.trim();
+}
+
+// Splits LLM output into the main doc and variant subdocs.
+function splitSubdocs(md) {
+  const parts = md.split(/^===SUBDOC:\s*(.+?)\s*===\s*$/m);
+  const main = parts[0].trim();
+  const subdocs = [];
+  for (let i = 1; i < parts.length; i += 2) {
+    const title = parts[i].trim();
+    const content = (parts[i + 1] ?? '').trim();
+    if (title && content) subdocs.push({ title, content });
+  }
+  return { main, subdocs };
+}
+
+async function appendBlocksBatched(blockId, blocks) {
+  for (let i = 0; i < blocks.length; i += 100) {
+    await notion.blocks.children.append({
+      block_id: blockId,
+      children: blocks.slice(i, i + 100),
+    });
+  }
+}
+
 // --- 1. Fetch draft (including subpages) from Notion as markdown ---
 console.log('Fetching draft page tree from Notion...');
 const draftMd = (await fetchDraftTree(draftPageId)).trim();
@@ -117,7 +151,7 @@ if (principlesPageId) {
 
 // --- 2. Detect manual edits made directly on the GDD page ---
 let manualEdits = '(none)';
-const currentGddPageMd = await pageToMd(gddPageId);
+const currentGddPageMd = await fetchGddCombined(gddPageId);
 if (existsSync(GDD_NOTION_SNAPSHOT_FILE)) {
   const lastWritten = readFileSync(GDD_NOTION_SNAPSHOT_FILE, 'utf8').trim();
   if (lastWritten !== currentGddPageMd) {
@@ -179,6 +213,12 @@ if (!gddMd) {
   process.exit(1);
 }
 
+const { main: gddMainMd, subdocs } = splitSubdocs(gddMd);
+if (!gddMainMd) {
+  console.error('Claude output has no main document; aborting without touching the GDD.');
+  process.exit(1);
+}
+
 // --- 6. Save local snapshots (committed by CI for version history) ---
 mkdirSync(DOCS_DIR, { recursive: true });
 writeFileSync(GDD_FILE, gddMd + '\n');
@@ -187,6 +227,8 @@ if (principlesPageId) writeFileSync(PRINCIPLES_SNAPSHOT_FILE, principlesMd + '\n
 console.log(`Wrote ${path.relative(root, GDD_FILE)} and ${path.relative(root, DRAFT_SNAPSHOT_FILE)}`);
 
 // --- 7. Replace the content of the GDD page in Notion ---
+// Deleting child_page blocks archives last run's variant subpages; they are
+// recreated below so the layout stays deterministic (main doc, then subdocs).
 console.log('Clearing old GDD page content...');
 const oldBlocks = await listAllChildren(gddPageId);
 for (const block of oldBlocks) {
@@ -194,16 +236,22 @@ for (const block of oldBlocks) {
 }
 
 console.log('Writing new GDD content to Notion...');
-const newBlocks = markdownToBlocks(gddMd);
-for (let i = 0; i < newBlocks.length; i += 100) {
-  await notion.blocks.children.append({
-    block_id: gddPageId,
-    children: newBlocks.slice(i, i + 100),
+const mainBlocks = markdownToBlocks(gddMainMd);
+await appendBlocksBatched(gddPageId, mainBlocks);
+
+for (const { title, content } of subdocs) {
+  const blocks = markdownToBlocks(content);
+  const page = await notion.pages.create({
+    parent: { page_id: gddPageId },
+    properties: { title: { title: [{ text: { content: title } }] } },
+    children: blocks.slice(0, 100),
   });
+  if (blocks.length > 100) await appendBlocksBatched(page.id, blocks.slice(100));
+  console.log(`  wrote variant subdoc: ${title}`);
 }
 
 // --- 8. Read the page back and snapshot it for manual-edit detection ---
-const readBack = await pageToMd(gddPageId);
+const readBack = await fetchGddCombined(gddPageId);
 writeFileSync(GDD_NOTION_SNAPSHOT_FILE, readBack + '\n');
 
-console.log(`Done. GDD updated (${newBlocks.length} blocks).`);
+console.log(`Done. GDD updated (${mainBlocks.length} main blocks, ${subdocs.length} variant subdoc(s)).`);

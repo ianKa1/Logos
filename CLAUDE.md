@@ -16,12 +16,12 @@ Requires `.env` (see `.env.example`) and Claude Code on PATH.
 Single pipeline in `scripts/sync.mjs`:
 
 1. Notion Draft page tree → markdown (`notion-to-md`; custom recursion into `child_page` blocks up to depth 3, each subpage emitted as a `【子页面】<title>` section). Also fetches the optional First Principles page (`NOTION_PRINCIPLES_PAGE_ID`, snapshot in `docs/first-principles.md`) — design pillars that the GDD must stay consistent with; conflicts get flagged in Open Questions
-2. Manual-edit detection on the GDD page: compare current page markdown vs `docs/gdd-notion-snapshot.md` (read-back from last write). If changed, edits are archived to `docs/gdd-manual-edits.md` and passed to the prompt as designer input
+2. Manual-edit detection on the GDD: compare the current GDD tree (main page + variant subpages, combined format) vs `docs/gdd-notion-snapshot.md` (read-back from last write). If changed, edits are archived to `docs/gdd-manual-edits.md` and passed to the prompt as designer input
 3. Change detection via `docs/draft-snapshot.md` comparison (skips only if draft AND GDD both unchanged)
 4. Prompt assembly from `prompts/restructure.md` (placeholders: `{{FIRST_PRINCIPLES}}`, `{{PREVIOUS_GDD}}`, `{{MANUAL_EDITS}}`, `{{DRAFT}}`)
-5. `claude -p --output-format text` (headless, prompt via stdin, output is the full GDD markdown)
-6. Write `docs/gdd.md` + `docs/draft-snapshot.md` (committed by CI for history)
-7. Replace Notion GDD page content (delete all blocks, append new via `@tryfabric/martian`), then read it back into `docs/gdd-notion-snapshot.md`
+5. `claude -p --output-format text` (headless, prompt via stdin). Output is the main GDD markdown followed by `===SUBDOC: <variant>===`-delimited per-variant documents; `splitSubdocs()` parses them
+6. Write `docs/gdd.md` (combined, with SUBDOC markers) + `docs/draft-snapshot.md` (committed by CI for history)
+7. Replace Notion GDD content: main page blocks rewritten, old variant subpages archived and recreated (one subpage per SUBDOC — URLs churn each run by design), then the whole tree is read back into `docs/gdd-notion-snapshot.md` in the same combined format
 
 Draft conventions (understood by the prompt): `【决定】` finalizes, `【弃案】` removes (the only removal path — silent deletions don't propagate), `【问题】` → open questions, `方案X` subpages = competing variants kept side-by-side until one is marked `【决定】`.
 

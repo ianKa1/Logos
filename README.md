@@ -68,7 +68,7 @@ Paste this legend at the top of the Notion Draft page (as a callout):
 
 Key behaviors:
 - **Subpages**: the whole Draft page tree is read (up to 3 levels deep). Organize however you like.
-- **Competing variants** (`方案A` / `方案B` subpages) are kept as clearly-labeled alternatives with a comparison table in the GDD until one is marked `【决定】`; the others then move to a "已弃方案" appendix.
+- **Competing variants** (`方案A` / `方案B` subpages) each get their **own subpage under the GDD** with the full detailed design; the main GDD page holds a per-variant summary plus a comparison table. When one is marked `【决定】` it merges into the main design and the others move to a "已弃方案" appendix. Note: variant subpages are recreated on every sync, so their URLs change — link to the main GDD page, not to subpages.
 - **Manual GDD edits** are detected via a read-back snapshot (`docs/gdd-notion-snapshot.md`), archived to `docs/gdd-manual-edits.md`, and fed to Claude as authoritative designer input on the next run.
 - **First Principles** (`NOTION_PRINCIPLES_PAGE_ID`): a separate, rarely-changing page of design pillars. The GDD gets a condensed 设计支柱 section, and draft content that conflicts with a pillar is flagged in Open Questions instead of being silently resolved.
 

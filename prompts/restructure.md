@@ -20,9 +20,21 @@ If the draft contains a legend/explanation block describing these conventions, i
 
 ## Variant handling
 
-- Competing gameplay structures or design alternatives must NOT be merged into one design. Present them side by side in a "候选方案" section: one subsection per variant, followed by a short comparison table (核心差异、优势、风险).
-- Shared/common design elements that hold across all variants belong in the main body, not duplicated in each variant.
-- Only when a variant is marked `【决定】` does it become the main design; the losing variants then move to the "已弃方案" appendix.
+- Competing gameplay structures or design alternatives must NOT be merged into one design.
+- Each variant gets its own **subdocument** (see Output format). The main document's "候选方案" section contains, per variant: a concise summary (a few bullets capturing the core idea) and the line `详见子文档：<variant name>`, followed by a short comparison table (核心差异、优势、风险) across all variants.
+- Full variant details (rules, phases, numbers) live ONLY in the subdocs, not in the main document.
+- Shared/common design elements that hold across all variants belong in the main document, not duplicated in each variant's subdoc.
+- Only when a variant is marked `【决定】` does it become the main design (its content is then merged into the main document's core sections and its subdoc is dropped); the losing variants then move to the "已弃方案" appendix.
+
+## Output format
+
+- Output the MAIN GDD document first.
+- Then, for EACH variant in 候选方案, output a delimiter line of exactly this form:
+
+===SUBDOC: <variant name>===
+
+followed by that variant's complete detailed design document in markdown (starting with a `#` title).
+- The PREVIOUS GDD and MANUAL EDITS inputs use this same `===SUBDOC:===` format.
 
 ## First principles handling
 
