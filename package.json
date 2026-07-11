@@ -1,0 +1,15 @@
+{
+  "name": "card-gdd",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "node scripts/sync.mjs",
+    "sync:force": "node scripts/sync.mjs --force"
+  },
+  "dependencies": {
+    "@notionhq/client": "^2.2.15",
+    "@tryfabric/martian": "^1.2.4",
+    "dotenv": "^16.4.5",
+    "notion-to-md": "^3.1.1"
+  }
+}
