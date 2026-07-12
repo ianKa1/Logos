@@ -7,8 +7,6 @@
 > • GDD 页面为机器生成；直接修改也会被保留并整合。
 
 
-[**⚡ 点我整理 GDD**](https://gdd-sync-trigger.iankai.workers.dev/sync?key=undefined)  ← 写完草稿后点这个链接，稍后查看 GDD 页面
-
 ---
 
 ## 【子页面】📥 Inbox-随手记

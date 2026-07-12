@@ -130,7 +130,12 @@ async function appendBlocksBatched(blockId, blocks) {
 
 // --- 1. Fetch draft (including subpages) from Notion as markdown ---
 console.log('Fetching draft page tree from Notion...');
-const draftMd = (await fetchDraftTree(draftPageId)).trim();
+// Strip the "sync now" trigger link so its key never lands in snapshots/prompts.
+const draftMd = (await fetchDraftTree(draftPageId))
+  .split('\n')
+  .filter((line) => !line.includes('sync?key='))
+  .join('\n')
+  .trim();
 
 if (!draftMd) {
   console.error('Draft page (including subpages) is empty; nothing to do.');
