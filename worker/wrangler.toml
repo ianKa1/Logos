@@ -3,8 +3,8 @@ main = "worker.js"
 compatibility_date = "2026-07-01"
 
 [vars]
-# Set to your GitHub repo, e.g. "yourname/card_GDD"
-GITHUB_REPO = "OWNER/card_GDD"
+# Set to your GitHub repo, e.g. "ianKa1/Logos"
+GITHUB_REPO = "ianKa1/Logos"
 
 # Secrets (set via `npx wrangler secret put <NAME>`, never committed):
 #   GITHUB_TOKEN — fine-grained PAT with Contents read/write on this repo
