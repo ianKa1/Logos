@@ -25,7 +25,9 @@ Single pipeline in `scripts/sync.mjs`:
 
 Draft conventions (understood by the prompt): `【决定】` finalizes, `【弃案】` removes (the only removal path — silent deletions don't propagate), `【问题】` → open questions, `方案X` subpages = competing variants kept side-by-side until one is marked `【决定】`.
 
-CI: `.github/workflows/gdd-sync.yml` — daily cron + manual `workflow_dispatch`, commits `docs/` after each run. Secrets: `NOTION_TOKEN`, `NOTION_DRAFT_PAGE_ID`, `NOTION_GDD_PAGE_ID`, `CLAUDE_CODE_OAUTH_TOKEN`.
+CI: `.github/workflows/gdd-sync.yml` — daily cron + manual `workflow_dispatch` + `repository_dispatch` (type `sync-now`), commits `docs/` after each run. Secrets: `NOTION_TOKEN`, `NOTION_DRAFT_PAGE_ID`, `NOTION_GDD_PAGE_ID`, `NOTION_PRINCIPLES_PAGE_ID`, `CLAUDE_CODE_OAUTH_TOKEN`.
+
+Designer trigger: `worker/` is a Cloudflare Worker exposing `GET /sync?key=<TRIGGER_KEY>`; it fires the `sync-now` repository_dispatch via a fine-grained PAT (worker secrets: `GITHUB_TOKEN`, `TRIGGER_KEY`; var: `GITHUB_REPO`). The link is meant to be pasted on the Notion Draft page so designers can trigger a sync without GitHub access.
 
 ## Conventions
 

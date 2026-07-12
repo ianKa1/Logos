@@ -10,6 +10,8 @@ on:
         description: 'Restructure even if the draft is unchanged'
         type: boolean
         default: false
+  repository_dispatch:
+    types: [sync-now]
 
 permissions:
   contents: write

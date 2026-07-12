@@ -38,6 +38,24 @@ Claude Code must be installed and logged in (it already is if you use it daily).
 
 The workflow (`.github/workflows/gdd-sync.yml`) runs daily at 03:00 UTC and can be triggered manually from the Actions tab (with an optional "force" flag). Edit the `cron` line to change the cadence.
 
+### 4. "Sync now" link for designers (optional, real-time trigger)
+
+Lets anyone with the link trigger a sync from the Notion page — no GitHub account needed. Powered by a Cloudflare Worker (`worker/`) that fires a `repository_dispatch` event.
+
+1. Create a **fine-grained GitHub PAT** (Settings → Developer settings → Fine-grained tokens): repository access = this repo only, permissions = **Contents: Read and write**.
+2. Generate a trigger key: `openssl rand -hex 16`
+3. Edit `worker/wrangler.toml`: set `GITHUB_REPO` to your `owner/repo`.
+4. Deploy (needs a free Cloudflare account):
+   ```bash
+   cd worker
+   npx wrangler deploy
+   npx wrangler secret put GITHUB_TOKEN   # paste the PAT
+   npx wrangler secret put TRIGGER_KEY    # paste the key from step 2
+   ```
+5. The sync link is `https://gdd-sync-trigger.<your-subdomain>.workers.dev/sync?key=<TRIGGER_KEY>`. Paste it at the top of the Notion Draft page as a bookmark/link, e.g. **⚡ 点我整理 GDD**.
+
+Clicking it starts the workflow within seconds and shows designers a confirmation page. Unchanged drafts still skip the LLM call, so stray clicks cost nothing. Rapid repeat clicks coalesce via the workflow's concurrency group (one running + at most one queued).
+
 ## Usage
 
 ```bash
